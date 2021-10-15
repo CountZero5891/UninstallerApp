@@ -20,7 +20,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
-void _uninstall_app(WCHAR& str);
+void _uninstall_app();
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -147,7 +147,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     int i = 0;
     WCHAR str_2[255];
-    std::string str_3 = "";
+    //std::string str_3 = "Sublime Text 3_is1";
+    WCHAR str_3[1024] = { L"Sublime Text 3_is1" };
+    int itemIndex=0;
     switch (message)
     {
 
@@ -159,9 +161,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ID_BTN_UNINSTALL:
                 i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                SendMessage(hListBox, LB_GETTEXT, i, (LPARAM)str_2);
-                //MessageBoxW(hWnd, str_2, L"info", NULL);
-                _uninstall_app(*str_2);
+                SendMessage(hListBox, LB_GETCURSEL, i, (LPARAM)itemIndex);
+                MessageBoxW(hWnd, (LPCWSTR)itemIndex, L"info", NULL);
+                //_uninstall_app();
                 break;
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -321,18 +323,18 @@ void _call_32_bit(HWND &hListBox)
     RegCloseKey(hUninstKey);
 }
 
-void _uninstall_app(WCHAR& str)
+void _uninstall_app()
 {
     HKEY hKey = NULL;
     /*TCHAR dwBuffer[1024];*/
     wchar_t value[512];
-    //LPCWSTR value;
+    WCHAR srt[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\";
     DWORD BufferSize = BUFFER;
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Sublime Text 3_is1"), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" ), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
     {
         //std::cout << "Success opening key." << std::endl;
         ULONG bRes = RegGetValueW(HKEY_LOCAL_MACHINE,
-            TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Sublime Text 3_is1"),
+            TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"),
             TEXT("UninstallString"),
             RRF_RT_ANY,
             NULL,
