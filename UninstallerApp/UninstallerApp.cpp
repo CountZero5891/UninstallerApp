@@ -1,10 +1,12 @@
-﻿// UninstallerApp.cpp : Определяет точку входа для приложения.
+﻿
+// UninstallerApp.cpp : Определяет точку входа для приложения.
 //
 
 #include "framework.h"
 #include "UninstallerApp.h"
 #include "ShellAPI.h"
 #include <string>
+#include <strsafe.h>
 #define MAX_LOADSTRING 100
 #define BUFFER 8192
 
@@ -13,6 +15,24 @@ HINSTANCE hInst;                                // текущий экземпл
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 HWND hListBox, hBtn1, hBtn2, hBtn3, hBtn4;
+class AppInfo {
+    WCHAR displayName[1024];
+    WCHAR sUninstallString[1024];
+    WCHAR keyName[1024];
+
+
+};
+WCHAR sUninstallPath[1024];
+WCHAR sDisplayName[1024];
+
+typedef struct {
+    WCHAR _UninstallPath[1024];
+    WCHAR _DisplayName[1024];
+    WCHAR _RegKeyName[1024];
+} RegApplication;
+
+RegApplication regApp[];
+
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -21,6 +41,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
 void _uninstall_app();
+void _find_uninstall_string();
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -149,7 +170,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     WCHAR str_2[255];
     //std::string str_3 = "Sublime Text 3_is1";
     WCHAR str_3[1024] = { L"Sublime Text 3_is1" };
-    int itemIndex=0;
+    WCHAR itemIndex[10];
     switch (message)
     {
 
@@ -161,8 +182,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ID_BTN_UNINSTALL:
                 i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                SendMessage(hListBox, LB_GETCURSEL, i, (LPARAM)itemIndex);
-                MessageBoxW(hWnd, (LPCWSTR)itemIndex, L"info", NULL);
+                //printf("The index is %d\n", i);
+                SendMessage(hListBox, LB_GETTEXT, i, (LPARAM)str_2);
+                wsprintf(itemIndex, L"%d", i);
+
+                MessageBoxW(hWnd, str_2, L"info", NULL);
                 //_uninstall_app();
                 break;
             case IDM_ABOUT:
@@ -220,11 +244,12 @@ void _call_64_bit(HWND &hList)
     HKEY hAppKey = NULL;
     WCHAR sAppKeyName[1024];
     WCHAR sSubKey[1024];
-    WCHAR sDisplayName[1024];
+    //WCHAR sDisplayName[1024];
     const WCHAR* sRoot = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
     long lResult = ERROR_SUCCESS;
     DWORD dwType = KEY_READ;
-    DWORD dwBufferSize = 0;
+    DWORD dwBufferSize1 = 0;
+    DWORD dwBufferSize2 = 0;
 
     //Open the "Uninstall" key.
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, sRoot, 0, KEY_READ | KEY_WOW64_64KEY, &hUninstKey) != ERROR_SUCCESS)
@@ -236,9 +261,9 @@ void _call_64_bit(HWND &hList)
     for (DWORD dwIndex = 0; lResult == ERROR_SUCCESS; dwIndex++)
     {
         //Enumerate all sub keys...
-        dwBufferSize = sizeof(sAppKeyName);
-        if ((lResult = RegEnumKeyEx(hUninstKey, dwIndex, sAppKeyName,
-            &dwBufferSize, NULL, NULL, NULL, NULL)) == ERROR_SUCCESS)
+        dwBufferSize1 = sizeof(sAppKeyName);
+        if ((lResult = RegEnumKeyEx(hUninstKey, dwIndex, (LPWSTR)sAppKeyName,
+            &dwBufferSize1, NULL, NULL, NULL, NULL)) == ERROR_SUCCESS)
         {
             //Open the sub key.
             wsprintf(sSubKey, L"%s\\%s", sRoot, sAppKeyName);
@@ -250,12 +275,23 @@ void _call_64_bit(HWND &hList)
             }
 
             //Get the display name value from the application's sub key.
-            dwBufferSize = sizeof(sDisplayName);
+            dwBufferSize1 = sizeof(sDisplayName);
             if (RegQueryValueEx(hAppKey, L"DisplayName", NULL,
-                &dwType, (unsigned char*)sDisplayName, &dwBufferSize) == ERROR_SUCCESS)
+                &dwType, (unsigned char*)sDisplayName, &dwBufferSize1) == ERROR_SUCCESS)
             {
                 //wprintf(L"%s\n", sDisplayName);
                 SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
+            }
+            else {
+                //Display name value doe not exist, this application was probably uninstalled.
+            }
+            dwBufferSize1 = sizeof(sUninstallPath);
+            if (RegQueryValueEx(hAppKey, L"UninstallString", NULL,
+                &dwType, (unsigned char*)sUninstallPath, &dwBufferSize1) == ERROR_SUCCESS)
+            {
+                //StringCbPrintfA();
+                //wprintf(L"%s\n", sDisplayName);
+                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sUninstallPath);
             }
             else {
                 //Display name value doe not exist, this application was probably uninstalled.
