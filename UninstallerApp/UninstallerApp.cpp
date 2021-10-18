@@ -7,6 +7,7 @@
 #include "ShellAPI.h"
 #include <string>
 #include <strsafe.h>
+#include <vector>
 #define MAX_LOADSTRING 100
 #define BUFFER 8192
 
@@ -24,14 +25,14 @@ class AppInfo {
 };
 WCHAR sUninstallPath[1024];
 WCHAR sDisplayName[1024];
-
-typedef struct {
+std::vector<std::wstring> dsNm;
+struct RegApplication {
     WCHAR _UninstallPath[1024];
     WCHAR _DisplayName[1024];
     WCHAR _RegKeyName[1024];
-} RegApplication;
+} ;
 
-RegApplication regApp[];
+RegApplication regApp[200];
 
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -170,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     WCHAR str_2[255];
     //std::string str_3 = "Sublime Text 3_is1";
     WCHAR str_3[1024] = { L"Sublime Text 3_is1" };
-    WCHAR itemIndex[10];
+    int itemIndex=0;
     switch (message)
     {
 
@@ -184,8 +185,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
                 //printf("The index is %d\n", i);
                 SendMessage(hListBox, LB_GETTEXT, i, (LPARAM)str_2);
-                wsprintf(itemIndex, L"%d", i);
-
+                /*wsprintf(itemIndex, L"%d", i);*/
+                
                 MessageBoxW(hWnd, str_2, L"info", NULL);
                 //_uninstall_app();
                 break;
@@ -245,6 +246,7 @@ void _call_64_bit(HWND &hList)
     WCHAR sAppKeyName[1024];
     WCHAR sSubKey[1024];
     //WCHAR sDisplayName[1024];
+    
     const WCHAR* sRoot = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
     long lResult = ERROR_SUCCESS;
     DWORD dwType = KEY_READ;
@@ -280,6 +282,7 @@ void _call_64_bit(HWND &hList)
                 &dwType, (unsigned char*)sDisplayName, &dwBufferSize1) == ERROR_SUCCESS)
             {
                 //wprintf(L"%s\n", sDisplayName);
+                
                 SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
             }
             else {
