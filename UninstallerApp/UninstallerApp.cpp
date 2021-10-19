@@ -8,6 +8,7 @@
 #include <string>
 #include <strsafe.h>
 #include <vector>
+
 #define MAX_LOADSTRING 100
 #define BUFFER 8192
 
@@ -16,13 +17,16 @@ HINSTANCE hInst;                                // текущий экземпл
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 HWND hListBox, hBtn1, hBtn2, hBtn3, hBtn4;
-class AppInfo {
-    WCHAR displayName[1024];
-    WCHAR sUninstallString[1024];
-    WCHAR keyName[1024];
-
-
-};
+std::vector<std::wstring> displayNameVector;
+std::vector<std::wstring> UninstallStringVector;
+std::vector<std::wstring> RegKeyNameVector;
+//class AppInfo {
+//    WCHAR displayName[1024];
+//    WCHAR sUninstallString[1024];
+//    WCHAR keyName[1024];
+//
+//
+//};
 WCHAR sUninstallPath[1024];
 WCHAR sDisplayName[1024];
 std::vector<std::wstring> dsNm;
@@ -148,7 +152,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
    _call_64_bit(hListBox);
-   //_call_32_bit(hListBox);
+   _call_32_bit(hListBox);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -252,7 +256,7 @@ void _call_64_bit(HWND &hList)
     DWORD dwType = KEY_READ;
     DWORD dwBufferSize1 = 0;
     DWORD dwBufferSize2 = 0;
-
+    
     //Open the "Uninstall" key.
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, sRoot, 0, KEY_READ | KEY_WOW64_64KEY, &hUninstKey) != ERROR_SUCCESS)
     {
@@ -282,8 +286,8 @@ void _call_64_bit(HWND &hList)
                 &dwType, (unsigned char*)sDisplayName, &dwBufferSize1) == ERROR_SUCCESS)
             {
                 //wprintf(L"%s\n", sDisplayName);
-                
-                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
+                displayNameVector.push_back(sDisplayName);
+                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
             }
             else {
                 //Display name value doe not exist, this application was probably uninstalled.
@@ -303,7 +307,10 @@ void _call_64_bit(HWND &hList)
             RegCloseKey(hAppKey);
         }
     }
-
+    for (int i = 0; i < displayNameVector.size(); i++)
+    {
+        SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)displayNameVector[i].c_str());
+    }
     RegCloseKey(hUninstKey);
 }
 
@@ -348,8 +355,9 @@ void _call_32_bit(HWND &hListBox)
             if (RegQueryValueEx(hAppKey, L"DisplayName", NULL,
                 &dwType, (unsigned char*)sDisplayName, &dwBufferSize) == ERROR_SUCCESS)
             {
+                displayNameVector.push_back(sDisplayName);
                 //wprintf(L"%s\n", sDisplayName);
-                SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
+                //SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
             }
             else {
                 //Display name value doe not exist, this application was probably uninstalled.
@@ -358,7 +366,10 @@ void _call_32_bit(HWND &hListBox)
             RegCloseKey(hAppKey);
         }
     }
-
+    for (int i = 0; i < displayNameVector.size(); i++)
+    {
+        SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)displayNameVector[i].c_str());
+    }
     RegCloseKey(hUninstKey);
 }
 
