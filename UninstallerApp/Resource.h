@@ -20,6 +20,7 @@
 #define ID_BTN_DELETE           112
 #define ID_BTN_RENAME           113
 #define ID_BTN_EXIT             114
+#define IDC_STATISTICS			115
 #endif
 // Следующие стандартные значения для новых объектов
 //
