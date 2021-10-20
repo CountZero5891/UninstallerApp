@@ -62,6 +62,7 @@ void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
 void _uninstall_app();
 void _find_uninstall_string();
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -71,7 +72,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Разместите код здесь.
-
+    HANDLE Test_Present = CreateMutex(NULL, false, L"UninstallerApp");
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        MessageBox(0, L"Программа уже запущена", NULL, MB_OK);
+        return 0;
+    }
     // Инициализация глобальных строк
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_UNINSTALLERAPP, szWindowClass, MAX_LOADSTRING);
@@ -96,7 +102,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
-
+    CloseHandle(Test_Present);
     return (int) msg.wParam;
 }
 
@@ -207,18 +213,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ID_BTN_UNINSTALL:
                 i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                //SendMessage(hListBox, LB_GETTEXT, i, (LPARAM)str_2);
-                //SendMessage(hListBox, LB_GETCURSEL, i, (LPARAM)a);
-                //MessageBoxW(hWnd, str_2, L"info", NULL);
-                //_uninstall_app(*str_2);
                 SendMessage(hListBox, LB_GETCURSEL, i, 0);
                 itemIndex = i;
                 check = std::to_wstring(itemIndex);
-
-                //MessageBox(hWnd, check.c_str(), L"wasd", MB_OK);
                 MessageBox(hWnd, regApp.at(itemIndex)._DisplayName.c_str(), L"wasd", MB_OK);
-                ////a = (LPCWSTR)i;
-                //MessageBoxW(hWnd, (LPCWSTR)str_2, L"info", NULL);
                 break;
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
