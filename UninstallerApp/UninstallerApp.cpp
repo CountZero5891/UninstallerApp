@@ -334,9 +334,9 @@ void _call_32_bit(HWND &hListBox)
             RegCloseKey(hAppKey);
         }
     }
-    for (int i = 0; i < displayNameVector.size(); i++)
+    for (int i = 0; i < regApp.size(); i++)
     {
-        SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)displayNameVector[i].c_str());
+        SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
     }
     RegCloseKey(hUninstKey);
 }
