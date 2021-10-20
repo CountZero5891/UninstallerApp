@@ -173,7 +173,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
    _call_64_bit(hListBox);
-   //_call_32_bit(hListBox);
+   _call_32_bit(hListBox);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -309,13 +309,27 @@ void _call_32_bit(HWND &hListBox)
             if (RegQueryValueEx(hAppKey, L"DisplayName", NULL,
                 &dwType, (unsigned char*)sDisplayName, &dwBufferSize) == ERROR_SUCCESS)
             {
-                displayNameVector.push_back(sDisplayName);
                 //wprintf(L"%s\n", sDisplayName);
-                //SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
+
+                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
             }
             else {
                 //Display name value doe not exist, this application was probably uninstalled.
             }
+            dwBufferSize = sizeof(sUninstallPath);
+            if (RegQueryValueEx(hAppKey, L"UninstallString", NULL,
+                &dwType, (unsigned char*)sUninstallPath, &dwBufferSize) == ERROR_SUCCESS)
+            {
+                //regApp.at(dwIndex).push_back();
+                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName));
+                //StringCbPrintfA();
+                //wprintf(L"%s\n", sDisplayName);
+                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sUninstallPath);
+            }
+            else {
+                //Display name value doe not exist, this application was probably uninstalled.
+            }
+
 
             RegCloseKey(hAppKey);
         }
@@ -401,7 +415,7 @@ void _call_64_bit(HWND& hList)
                 &dwType, (unsigned char*)sDisplayName, &dwBufferSize1) == ERROR_SUCCESS)
             {
                 //wprintf(L"%s\n", sDisplayName);
-                displayNameVector.push_back(sDisplayName);
+                
                 //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
             }
             else {
@@ -429,4 +443,6 @@ void _call_64_bit(HWND& hList)
         SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
     }
     RegCloseKey(hUninstKey);
+
+
 }
