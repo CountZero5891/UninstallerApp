@@ -209,7 +209,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         for (int i = 0; i < regApp.size(); i++)
         {
             int pos = (int)SendMessage(hwndList, LB_ADDSTRING, 0,
-                (LPARAM)regApp[i]._DisplayName.cstr());
+                (LPARAM)regApp[i]._DisplayName.c_str());
             // Set the array index of the player as item data.
             // This enables us to retrieve the item from the array
             // even after the items are sorted by the list box.
