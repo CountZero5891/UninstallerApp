@@ -8,6 +8,7 @@
 #include <string>
 #include <strsafe.h>
 #include <vector>
+#include <algorithm>
 
 #define MAX_LOADSTRING 100
 #define BUFFER 8192
@@ -17,9 +18,7 @@ HINSTANCE hInst;                                // текущий экземпл
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 HWND hListBox, hBtn1, hBtn2, hBtn3, hBtn4;
-std::vector<std::wstring> displayNameVector;
-std::vector<std::wstring> UninstallStringVector;
-std::vector<std::wstring> RegKeyNameVector;
+
 //class AppInfo {
 //    WCHAR displayName[1024];
 //    WCHAR sUninstallString[1024];
@@ -33,20 +32,17 @@ std::vector<std::wstring> dsNm;
 
 
 struct RegApplication {
-    /*WCHAR _UninstallPath[1023];
-    WCHAR _DisplayName[1023];
-    WCHAR _RegKeyName[1023];*/
     
     std::wstring _UninstallPath;
     std::wstring _DisplayName;
     std::wstring _RegKeyName;
-
-    RegApplication(WCHAR unPath[1023], WCHAR dispName[1023], WCHAR regKeyName[1023])
+    DWORD _DwType;
+    RegApplication(WCHAR unPath[1023], WCHAR dispName[1023], WCHAR regKeyName[1023], DWORD dwType)
     {
         _UninstallPath = unPath;
         _DisplayName = dispName;
         _RegKeyName = regKeyName;
-        //memccpy()
+        _DwType = dwType;
     };
 
 } ;
@@ -60,6 +56,8 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
+void _output_vector(HWND& hListBox);
+bool compareByLength(const RegApplication& a, const RegApplication& b);
 void _uninstall_app();
 void _find_uninstall_string();
 
@@ -174,6 +172,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
    _call_64_bit(hListBox);
    _call_32_bit(hListBox);
+   _output_vector(hListBox);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -204,6 +203,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     std::wstring check;
     switch (message)
     {
+    
+    case WM_INITDIALOG:
+    {
+        for (int i = 0; i < regApp.size(); i++)
+        {
+            int pos = (int)SendMessage(hwndList, LB_ADDSTRING, 0,
+                (LPARAM)regApp[i]._DisplayName.cstr());
+            // Set the array index of the player as item data.
+            // This enables us to retrieve the item from the array
+            // even after the items are sorted by the list box.
+            SendMessage(hwndList, LB_SETITEMDATA, pos, (LPARAM)i);
+        }
+        // Set input focus to the list box.
+        SetFocus(hwndList);
+        return TRUE;
+    }
 
     case WM_COMMAND:
         {
@@ -229,15 +244,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
-            
-            EndPaint(hWnd, &ps);
-        }
-        break;
+    //case WM_PAINT:
+    //    {
+    //        PAINTSTRUCT ps;
+    //        HDC hdc = BeginPaint(hWnd, &ps);
+    //        // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+    //        
+    //        EndPaint(hWnd, &ps);
+    //    }
+    //    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -321,7 +336,7 @@ void _call_32_bit(HWND &hListBox)
                 &dwType, (unsigned char*)sUninstallPath, &dwBufferSize) == ERROR_SUCCESS)
             {
                 //regApp.at(dwIndex).push_back();
-                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName));
+                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName, dwType));
                 //StringCbPrintfA();
                 //wprintf(L"%s\n", sDisplayName);
                 //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sUninstallPath);
@@ -334,10 +349,10 @@ void _call_32_bit(HWND &hListBox)
             RegCloseKey(hAppKey);
         }
     }
-    for (int i = 0; i < regApp.size(); i++)
+    /*for (int i = 0; i < regApp.size(); i++)
     {
         SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
-    }
+    }*/
     RegCloseKey(hUninstKey);
 }
 
@@ -426,7 +441,7 @@ void _call_64_bit(HWND& hList)
                 &dwType, (unsigned char*)sUninstallPath, &dwBufferSize1) == ERROR_SUCCESS)
             {
                 //regApp.at(dwIndex).push_back();
-                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName));
+                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName, dwType));
                 //StringCbPrintfA();
                 //wprintf(L"%s\n", sDisplayName);
                 //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sUninstallPath);
@@ -438,11 +453,24 @@ void _call_64_bit(HWND& hList)
             RegCloseKey(hAppKey);
         }
     }
-    for (int i = 0; i < regApp.size(); i++)
+    /*for (int i = 0; i < regApp.size(); i++)
     {
         SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
-    }
+    }*/
     RegCloseKey(hUninstKey);
+}
+
+bool compareByLength(const RegApplication& a, const RegApplication& b)
+{
+    return a._DisplayName.size() < b._DisplayName.size();
+}
 
 
+void _output_vector(HWND& hListBox)
+{
+    std::sort(regApp.begin(), regApp.end(), compareByLength);
+    for (int i = 0; i < regApp.size(); i++)
+    {
+        SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
+    }
 }
