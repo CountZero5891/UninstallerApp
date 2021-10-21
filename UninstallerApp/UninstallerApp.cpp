@@ -172,6 +172,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
    _call_64_bit(hListBox);
    _call_32_bit(hListBox);
+   //sort(regApp.begin(), regApp.end(), compareByLength);
    _output_vector(hListBox);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -204,21 +205,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     
-    case WM_INITDIALOG:
-    {
-        for (int i = 0; i < regApp.size(); i++)
-        {
-            int pos = (int)SendMessage(hwndList, LB_ADDSTRING, 0,
-                (LPARAM)regApp[i]._DisplayName.c_str());
-            // Set the array index of the player as item data.
-            // This enables us to retrieve the item from the array
-            // even after the items are sorted by the list box.
-            SendMessage(hwndList, LB_SETITEMDATA, pos, (LPARAM)i);
-        }
-        // Set input focus to the list box.
-        SetFocus(hwndList);
-        return TRUE;
-    }
+    //case WM_INITDIALOG:
+    //{
+    //    for (int i = 0; i < regApp.size(); i++)
+    //    {
+    //        int pos = (int)SendMessage(hwndList, LB_ADDSTRING, 0,
+    //            (LPARAM)regApp[i]._DisplayName.c_str());
+    //        // Set the array index of the player as item data.
+    //        // This enables us to retrieve the item from the array
+    //        // even after the items are sorted by the list box.
+    //        SendMessage(hwndList, LB_SETITEMDATA, pos, (LPARAM)i);
+    //    }
+    //    // Set input focus to the list box.
+    //    SetFocus(hwndList);
+    //    return TRUE;
+    //}
 
     case WM_COMMAND:
         {
@@ -244,15 +245,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    //case WM_PAINT:
-    //    {
-    //        PAINTSTRUCT ps;
-    //        HDC hdc = BeginPaint(hWnd, &ps);
-    //        // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
-    //        
-    //        EndPaint(hWnd, &ps);
-    //    }
-    //    break;
+    case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hWnd, &ps);
+            // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+            
+            EndPaint(hWnd, &ps);
+        }
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -462,15 +463,21 @@ void _call_64_bit(HWND& hList)
 
 bool compareByLength(const RegApplication& a, const RegApplication& b)
 {
-    return a._DisplayName.size() < b._DisplayName.size();
+    return a._DisplayName < b._DisplayName;
 }
 
 
 void _output_vector(HWND& hListBox)
 {
-    std::sort(regApp.begin(), regApp.end(), compareByLength);
-    for (int i = 0; i < regApp.size(); i++)
+    //std::sort(regApp.begin(), regApp.end(), compareByLength);
+    //for (int i = 0; i <= regApp.size(); i++)
+    //{
+    //    SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
+    //    //SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._RegKeyName.c_str());
+    //    //SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._UninstallPath.c_str());
+    //}
+    for (auto const& element : regApp)
     {
-        SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
+        SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)element._DisplayName.c_str());
     }
 }
