@@ -66,8 +66,8 @@ void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
 void _output_vector(HWND& hListBox);
 bool compareByLength(const RegApplication& a, const RegApplication& b);
-void _uninstall_app();
-void _find_uninstall_string();
+void _uninstall_app(std::wstring& uninstal_string);
+//void _find_uninstall_string(std::wstring &uninstal_string);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -212,6 +212,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     TCHAR buff[MAX_PATH];
     LPCWSTR a = L"";
     std::wstring check;
+    std::wstring uninstall_string;
     switch (message)
     {
     case WM_COMMAND:
@@ -226,8 +227,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 itemIndex = i;
                 check = std::to_wstring(itemIndex);
                 MessageBox(hWnd, regApp.at(itemIndex)._DisplayName.c_str(), L"wasd", MB_OK);
-
+                uninstall_string = regApp.at(itemIndex)._UninstallPath;
+                //MessageBox(hWnd, uninstall_string.c_str(), L"wasd", MB_OK);
+                _uninstall_app(uninstall_string);
                 break;
+
+
+
             case ID_BTN_EXIT:
                 DestroyWindow(hWnd);
                 break;
@@ -279,7 +285,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-
 
 void _call_32_bit(HWND &hListBox)
 {
@@ -354,33 +359,34 @@ void _call_32_bit(HWND &hListBox)
     RegCloseKey(hUninstKey);
 }
 
-void _uninstall_app()
+void _uninstall_app(std::wstring &uninstal_string)
 {
-    HKEY hKey = NULL;
-    /*TCHAR dwBuffer[1024];*/
-    wchar_t value[512];
-    WCHAR srt[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\";
-    DWORD BufferSize = BUFFER;
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" ), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
-    {
-        //std::cout << "Success opening key." << std::endl;
-        ULONG bRes = RegGetValueW(HKEY_LOCAL_MACHINE,
-            TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"),
-            TEXT("UninstallString"),
-            RRF_RT_ANY,
-            NULL,
-            (PVOID)&value,
-            &BufferSize);
-        if (bRes == ERROR_SUCCESS)
-        {
-            //_tprintf(TEXT("(%d) %s - %s\n"), hKey, value);
-            ShellExecute(NULL, L"open", value, NULL, NULL, SW_SHOW);
-            //std::cout<<*value<<std::endl;
-        }
+    ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
+    //HKEY hKey = NULL;
+    ///*TCHAR dwBuffer[1024];*/
+    //wchar_t value[512];
+    //std::wstring srt = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"+ uninstal_string;
+    //DWORD BufferSize = BUFFER;
+    //if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, srt.c_str()/*TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" )*/, 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+    //{
+    //    //std::cout << "Success opening key." << std::endl;
+    //    ULONG bRes = RegGetValueW(HKEY_LOCAL_MACHINE,
+    //        /*TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"),*/
+    //        srt.c_str(),
+    //        TEXT("UninstallString"),
+    //        RRF_RT_ANY,
+    //        NULL,
+    //        (PVOID)&value,
+    //        &BufferSize);
+    //    if (bRes == ERROR_SUCCESS)
+    //    {
+    //        //_tprintf(TEXT("(%d) %s - %s\n"), hKey, value);
+    //        ShellExecute(NULL, L"open", value, NULL, NULL, SW_SHOW);
+    //        //std::cout<<*value<<std::endl;
+    //    }
 
-    }
+    //}
 }
-
 
 void _call_64_bit(HWND& hList)
 {
