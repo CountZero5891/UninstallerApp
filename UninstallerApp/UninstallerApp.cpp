@@ -45,7 +45,15 @@ struct RegApplication {
         _DwType = dwType;
     };
 
+    
+
 } ;
+
+struct RegAppCmp {
+    bool operator () (const RegApplication& regApps1, const RegApplication& regApps2)const {
+        return regApps1._DisplayName < regApps2._DisplayName;
+    }
+};
 
 std::vector<RegApplication> regApp;
 
@@ -170,9 +178,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+   
    _call_64_bit(hListBox);
+    //sort(regApp.begin(), regApp.end(), RegAppCmp());
    _call_32_bit(hListBox);
-   //sort(regApp.begin(), regApp.end(), compareByLength);
+   //sort(regApp.begin(), regApp.end(), RegAppCmp());
    _output_vector(hListBox);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -204,23 +214,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     std::wstring check;
     switch (message)
     {
-    
-    //case WM_INITDIALOG:
-    //{
-    //    for (int i = 0; i < regApp.size(); i++)
-    //    {
-    //        int pos = (int)SendMessage(hwndList, LB_ADDSTRING, 0,
-    //            (LPARAM)regApp[i]._DisplayName.c_str());
-    //        // Set the array index of the player as item data.
-    //        // This enables us to retrieve the item from the array
-    //        // even after the items are sorted by the list box.
-    //        SendMessage(hwndList, LB_SETITEMDATA, pos, (LPARAM)i);
-    //    }
-    //    // Set input focus to the list box.
-    //    SetFocus(hwndList);
-    //    return TRUE;
-    //}
-
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -233,6 +226,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 itemIndex = i;
                 check = std::to_wstring(itemIndex);
                 MessageBox(hWnd, regApp.at(itemIndex)._DisplayName.c_str(), L"wasd", MB_OK);
+
+                break;
+            case ID_BTN_EXIT:
+                DestroyWindow(hWnd);
                 break;
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -470,6 +467,7 @@ bool compareByLength(const RegApplication& a, const RegApplication& b)
 void _output_vector(HWND& hListBox)
 {
     //std::sort(regApp.begin(), regApp.end(), compareByLength);
+    sort(regApp.begin(), regApp.end(), RegAppCmp());
     //for (int i = 0; i <= regApp.size(); i++)
     //{
     //    SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());

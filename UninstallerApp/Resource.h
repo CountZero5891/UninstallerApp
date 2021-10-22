@@ -3,7 +3,7 @@
 // Используется UninstallerApp.rc
 
 #define IDS_APP_TITLE			103
-
+#define LBS_SORT FALSE
 #define IDR_MAINFRAME			128
 #define IDD_UNINSTALLERAPP_DIALOG	102
 #define IDD_ABOUTBOX			103
