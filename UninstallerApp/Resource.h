@@ -21,6 +21,7 @@
 #define ID_BTN_RENAME           113
 #define ID_BTN_EXIT             114
 #define IDC_STATISTICS			115
+#define TRAY_ICONUID			116
 #endif
 // Следующие стандартные значения для новых объектов
 //

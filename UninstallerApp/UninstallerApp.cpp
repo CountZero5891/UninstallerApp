@@ -52,6 +52,10 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+void TrayDrawIcon(HWND hWnd);
+
+
+
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
 void _output_vector(HWND& hListBox);
@@ -252,6 +256,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
+            
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -265,6 +270,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             
             EndPaint(hWnd, &ps);
         }
+        break;
+    case WM_MINIMIZEBOX:
+        TrayDrawIcon(hWnd);
+        ShowWindow(hWnd, SW_HIDE);
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -293,6 +302,20 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+void TrayDrawIcon(HWND hWnd)
+{
+    NOTIFYICONDATA nid;
+    nid.cbSize = sizeof(NOTIFYICONDATA);
+    nid.hWnd = hWnd;
+    nid.uID = TRAY_ICONUID;
+    nid.uVersion = NOTIFYICON_VERSION;
+    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
+    LoadString(hInst, IDS_APP_TITLE, nid.szTip, 128);
+    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+    Shell_NotifyIcon(NIM_ADD, &nid);
+
 }
 
 
