@@ -19,20 +19,13 @@ WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки за�
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 HWND hListBox, hBtn1, hBtn2, hBtn3, hBtn4;
 
-//class AppInfo {
-//    WCHAR displayName[1024];
-//    WCHAR sUninstallString[1024];
-//    WCHAR keyName[1024];
-//
-//
-//};
 WCHAR sUninstallPath[1024];
 WCHAR sDisplayName[1024];
 std::vector<std::wstring> dsNm;
 
 
-struct RegApplication {
-    
+struct RegApplication 
+{
     std::wstring _UninstallPath;
     std::wstring _DisplayName;
     std::wstring _RegKeyName;
@@ -44,10 +37,7 @@ struct RegApplication {
         _RegKeyName = regKeyName;
         _DwType = dwType;
     };
-
-    
-
-} ;
+};
 
 struct RegAppCmp {
     bool operator () (const RegApplication& regApps1, const RegApplication& regApps2)const {
@@ -65,8 +55,12 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
 void _output_vector(HWND& hListBox);
-bool compareByLength(const RegApplication& a, const RegApplication& b);
+
 void _uninstall_app(std::wstring& uninstal_string);
+void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord);
+void _rename_app_in_registry(std::wstring& app_display_name, DWORD& dWord);
+
+bool compareByLength(const RegApplication& a, const RegApplication& b);
 //void _find_uninstall_string(std::wstring &uninstal_string);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -213,6 +207,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     LPCWSTR a = L"";
     std::wstring check;
     std::wstring uninstall_string;
+    std::wstring reg_key_name;
+    DWORD dWord;
+    DWORD dwByte;
     switch (message)
     {
     case WM_COMMAND:
@@ -233,6 +230,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
 
 
+            case ID_BTN_DELETE:
+                i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+                SendMessage(hListBox, LB_GETCURSEL, i, 0);
+                itemIndex = i;
+                check = std::to_wstring(itemIndex);
+                MessageBox(hWnd, regApp.at(itemIndex)._RegKeyName.c_str(), L"wasd", MB_OK);
+                reg_key_name = regApp.at(itemIndex)._RegKeyName;
+                dwByte = regApp.at(itemIndex)._DwType;
+                _delete_app_from_registry(reg_key_name, dwByte);
+                
+                break;
+            case ID_BTN_RENAME:
 
             case ID_BTN_EXIT:
                 DestroyWindow(hWnd);
@@ -286,6 +295,76 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+
+void _call_64_bit(HWND& hList)
+{
+    HKEY hUninstKey = NULL;
+    HKEY hAppKey = NULL;
+    WCHAR sAppKeyName[1024];
+    WCHAR sUninstallPath[1024];
+    WCHAR sDisplayName[1024];
+    WCHAR sSubKey[1024];
+    //WCHAR sDisplayName[1024];
+
+    WCHAR sRoot[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+    long lResult = ERROR_SUCCESS;
+    DWORD dwType = KEY_READ;
+    DWORD dwByte = KEY_ALL_ACCESS | KEY_WOW64_64KEY;
+    DWORD dwBufferSize1 = 0;
+    DWORD dwBufferSize2 = 0;
+
+    //Open the "Uninstall" key.
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, sRoot, 0, KEY_READ | KEY_WOW64_64KEY, &hUninstKey) != ERROR_SUCCESS)
+    {
+        //return false;
+
+    }
+
+    for (DWORD dwIndex = 0; lResult == ERROR_SUCCESS; dwIndex++)
+    {
+        //Enumerate all sub keys...
+        dwBufferSize1 = sizeof(sAppKeyName);
+        if ((lResult = RegEnumKeyEx(hUninstKey, dwIndex, (LPWSTR)sAppKeyName,
+            &dwBufferSize1, NULL, NULL, NULL, NULL)) == ERROR_SUCCESS)
+        {
+            //Open the sub key.
+            wsprintf(sSubKey, L"%s\\%s", sRoot, sAppKeyName);
+
+            if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, sSubKey, 0, KEY_READ | KEY_WOW64_64KEY, &hAppKey) != ERROR_SUCCESS)
+            {
+                RegCloseKey(hAppKey);
+                RegCloseKey(hUninstKey);
+                //return false;
+            }
+
+            //Get the display name value from the application's sub key.
+            dwBufferSize1 = sizeof(sDisplayName);
+            if (RegQueryValueEx(hAppKey, L"DisplayName", NULL,
+                &dwType, (unsigned char*)sDisplayName, &dwBufferSize1) == ERROR_SUCCESS)
+            {
+                //wprintf(L"%s\n", sDisplayName);
+
+                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
+            }
+            else {
+                //Display name value doe not exist, this application was probably uninstalled.
+            }
+            dwBufferSize1 = sizeof(sUninstallPath);
+            if (RegQueryValueEx(hAppKey, L"UninstallString", NULL,
+                &dwType, (unsigned char*)sUninstallPath, &dwBufferSize1) == ERROR_SUCCESS)
+            {
+                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName, dwByte));
+            }
+            else {
+                //Display name value doe not exist, this application was probably uninstalled.
+            }
+
+            RegCloseKey(hAppKey);
+        }
+    }
+    RegCloseKey(hUninstKey);
+}
+
 void _call_32_bit(HWND &hListBox)
 {
     //setlocale(LC_ALL, "Russian");
@@ -297,6 +376,7 @@ void _call_32_bit(HWND &hListBox)
     WCHAR sRoot[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
     long lResult = ERROR_SUCCESS;
     DWORD dwType = KEY_READ;
+    DWORD dwByte = KEY_ALL_ACCESS | KEY_WOW64_32KEY;
     DWORD dwBufferSize = 0;
 
     //Open the "Uninstall" key.
@@ -339,7 +419,7 @@ void _call_32_bit(HWND &hListBox)
                 &dwType, (unsigned char*)sUninstallPath, &dwBufferSize) == ERROR_SUCCESS)
             {
                 //regApp.at(dwIndex).push_back();
-                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName, dwType));
+                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName, dwByte));
                 //StringCbPrintfA();
                 //wprintf(L"%s\n", sDisplayName);
                 //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sUninstallPath);
@@ -359,9 +439,40 @@ void _call_32_bit(HWND &hListBox)
     RegCloseKey(hUninstKey);
 }
 
-void _uninstall_app(std::wstring &uninstal_string)
+
+
+void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord)
 {
-    ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
+    HKEY hKey;
+    
+    std::wstring path = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" +  reg_key_name;
+    
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, path.c_str(), 0, dWord, &hKey) == ERROR_SUCCESS)
+    {
+        if (RegDeleteKeyExW(HKEY_LOCAL_MACHINE, path.c_str(), dWord, NULL) == ERROR_SUCCESS)
+        {
+            MessageBox(NULL, L"Программа удалена из реестра", L"Сообщение", MB_OK);
+        }
+        else {
+            MessageBox(NULL, L"Произошла ошибка!", L"Сообщение", MB_OK);
+        }
+    }
+}
+
+void _uninstall_app(std::wstring& uninstal_string)
+{
+    //std::wstring start = L"start " + uninstal_string;
+    //std::wstring result = L"start ";
+    int a = 5;
+    const wchar_t* input = uninstal_string.c_str();
+    size_t size = (wcslen(input) + 1) * sizeof(wchar_t);
+    char* buffer = new char[size];
+    size_t convertedSize;
+    wcstombs_s(&convertedSize, buffer, size, input, size);
+    //std::wcstombs(buffer, input, size);
+    system(buffer);
+
+    //ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
     //HKEY hKey = NULL;
     ///*TCHAR dwBuffer[1024];*/
     //wchar_t value[512];
@@ -388,87 +499,13 @@ void _uninstall_app(std::wstring &uninstal_string)
     //}
 }
 
-void _call_64_bit(HWND& hList)
-{
-    HKEY hUninstKey = NULL;
-    HKEY hAppKey = NULL;
-    WCHAR sAppKeyName[1024];
-    WCHAR sUninstallPath[1024];
-    WCHAR sDisplayName[1024];
-    WCHAR sSubKey[1024];
-    //WCHAR sDisplayName[1024];
 
-    WCHAR sRoot[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
-    long lResult = ERROR_SUCCESS;
-    DWORD dwType = KEY_READ;
-    DWORD dwBufferSize1 = 0;
-    DWORD dwBufferSize2 = 0;
 
-    //Open the "Uninstall" key.
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, sRoot, 0, KEY_READ | KEY_WOW64_64KEY, &hUninstKey) != ERROR_SUCCESS)
-    {
-        //return false;
-
-    }
-
-    for (DWORD dwIndex = 0; lResult == ERROR_SUCCESS; dwIndex++)
-    {
-        //Enumerate all sub keys...
-        dwBufferSize1 = sizeof(sAppKeyName);
-        if ((lResult = RegEnumKeyEx(hUninstKey, dwIndex, (LPWSTR)sAppKeyName,
-            &dwBufferSize1, NULL, NULL, NULL, NULL)) == ERROR_SUCCESS)
-        {
-            //Open the sub key.
-            wsprintf(sSubKey, L"%s\\%s", sRoot, sAppKeyName);
-
-            if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, sSubKey, 0, KEY_READ | KEY_WOW64_64KEY, &hAppKey) != ERROR_SUCCESS)
-            {
-                RegCloseKey(hAppKey);
-                RegCloseKey(hUninstKey);
-                //return false;
-            }
-
-            //Get the display name value from the application's sub key.
-            dwBufferSize1 = sizeof(sDisplayName);
-            if (RegQueryValueEx(hAppKey, L"DisplayName", NULL,
-                &dwType, (unsigned char*)sDisplayName, &dwBufferSize1) == ERROR_SUCCESS)
-            {
-                //wprintf(L"%s\n", sDisplayName);
-                
-                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sDisplayName);
-            }
-            else {
-                //Display name value doe not exist, this application was probably uninstalled.
-            }
-            dwBufferSize1 = sizeof(sUninstallPath);
-            if (RegQueryValueEx(hAppKey, L"UninstallString", NULL,
-                &dwType, (unsigned char*)sUninstallPath, &dwBufferSize1) == ERROR_SUCCESS)
-            {
-                //regApp.at(dwIndex).push_back();
-                regApp.push_back(RegApplication(sUninstallPath, sDisplayName, sAppKeyName, dwType));
-                //StringCbPrintfA();
-                //wprintf(L"%s\n", sDisplayName);
-                //SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sUninstallPath);
-            }
-            else {
-                //Display name value doe not exist, this application was probably uninstalled.
-            }
-
-            RegCloseKey(hAppKey);
-        }
-    }
-    /*for (int i = 0; i < regApp.size(); i++)
-    {
-        SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)regApp[i]._DisplayName.c_str());
-    }*/
-    RegCloseKey(hUninstKey);
-}
 
 bool compareByLength(const RegApplication& a, const RegApplication& b)
 {
     return a._DisplayName < b._DisplayName;
 }
-
 
 void _output_vector(HWND& hListBox)
 {
