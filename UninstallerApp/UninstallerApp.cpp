@@ -57,6 +57,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK GoToProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK PasswordProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK GoToProc(HWND, UINT, WPARAM, LPARAM);
+
 void TrayDrawIcon(HWND hWnd);
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
@@ -178,22 +179,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
        hInstance, 
        nullptr);
 
-   /*hwndGoto = CreateDialog(hInst,
-       MAKEINTRESOURCE(DLG_GOTO),
-       hWnd,
-       (DLGPROC)GoToProc);*/
-   HWND hwndGoto = CreateWindowW(szWindowClass,
-       szTitle,
-       WS_OVERLAPPEDWINDOW,
-       600,
-       50,
-       700,
-       600,
-       nullptr,
-       nullptr,
-       hInstance,
-       nullptr);
-   editText = CreateWindowW(L"edit", NULL, WS_VISIBLE | WS_CHILD, 30, 30, 100, 500, hwndGoto, (HMENU)ID_EDIT_LINE, hInst, NULL);
+  
+   
    hListBox = CreateWindowW(L"listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD | LBS_WANTKEYBOARDINPUT, 30, 30, 500, 500, hWnd, (HMENU)ID_LIST, hInst, NULL);
    hBtn1 = CreateWindowEx(NULL, L"button", L"Delete", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 30, 70, 30, hWnd, (HMENU)ID_BTN_DELETE, hInst, NULL);
    hBtn2 = CreateWindowEx(NULL, L"button", L"Rename", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 90, 70, 30, hWnd, (HMENU)ID_BTN_RENAME, hInst, NULL);
@@ -278,15 +265,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 _delete_app_from_registry(reg_key_name, dwByte);
                 break;
             case ID_BTN_RENAME:
-                
-                    /*hwndGoto = CreateDialog(hInst,
-                        MAKEINTRESOURCE(118),
-                        hWnd,
-                        (DLGPROC)GoToProc);*/
-                    ShowWindow(hwndGoto, SW_SHOW);
-                
-                
-
                 break;
             case ID_BTN_EXIT:
                 DestroyWindow(hWnd);
@@ -553,6 +531,8 @@ void _output_vector(HWND& hListBox)
         SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)element._DisplayName.c_str());
     }
 }
+int iLine;             // Receives line number.
+BOOL fRelative;        // Receives check box status. 
 
 BOOL CALLBACK GoToProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -569,11 +549,11 @@ BOOL CALLBACK GoToProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
         {
         case IDOK:
             fRelative = IsDlgButtonChecked(hwndDlg, ID_ABSREL);
-            iLine = GetDlgItemInt(hwndDlg, ID_LINE, &fError, fRelative);
+            iLine = GetDlgItemInt(hwndDlg, IDС_EDIT1, &fError, fRelative);
             if (fError)
             {
-                MessageBox(hwndDlg, NULL, NULL, MB_OK);
-                SendDlgItemMessage(hwndDlg, ID_LINE, EM_SETSEL, 0, -1L);
+                MessageBox(hwndDlg, L"", L"", MB_OK);
+                SendDlgItemMessage(hwndDlg, IDС_EDIT1, EM_SETSEL, 0, -1L);
             }
             else
 
