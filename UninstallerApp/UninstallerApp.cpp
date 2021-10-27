@@ -18,11 +18,13 @@ HINSTANCE hInst;                                // текущий экземпл
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 HWND hListBox, hBtn1, hBtn2, hBtn3, hBtn4;
-
+HWND hwndGoto = NULL;
+HWND editText = NULL;
 WCHAR sUninstallPath[1024];
 WCHAR sDisplayName[1024];
 std::vector<std::wstring> dsNm;
-
+int iLine;             // Receives line number.
+BOOL fRelative;        // Receives check box status. 
 
 struct RegApplication 
 {
@@ -52,10 +54,10 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK GoToProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK PasswordProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK GoToProc(HWND, UINT, WPARAM, LPARAM);
 void TrayDrawIcon(HWND hWnd);
-
-
-
 void _call_64_bit(HWND& hList);
 void _call_32_bit(HWND& hList);
 void _output_vector(HWND& hListBox);
@@ -96,11 +98,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_UNINSTALLERAPP));
 
     MSG msg;
-
+    BOOL bRet;
     // Цикл основного сообщения:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    /*while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }*/
+    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
+    {
+        if (bRet == -1)
+        {
+            // Handle the error and possibly exit
+        }
+        else if (!IsWindow(hwndGoto) || !IsDialogMessage(hwndGoto, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -164,11 +178,28 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
        hInstance, 
        nullptr);
 
-    hListBox = CreateWindowW(L"listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD | LBS_WANTKEYBOARDINPUT, 30, 30, 500, 500, hWnd, (HMENU)ID_LIST, hInst, NULL);
-    hBtn1 = CreateWindowEx(NULL, L"button", L"Delete", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 30, 70, 30, hWnd, (HMENU)ID_BTN_DELETE, hInst, NULL);
-    hBtn2 = CreateWindowEx(NULL, L"button", L"Rename", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 90, 70, 30, hWnd, (HMENU)ID_BTN_RENAME, hInst, NULL);
-    hBtn3 = CreateWindowEx(NULL, L"button", L"Uninstall", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 150, 70, 30, hWnd, (HMENU)ID_BTN_UNINSTALL, hInst, NULL);
-    hBtn4 = CreateWindowEx(NULL, L"button", L"Exit", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 210, 70, 30, hWnd, (HMENU)ID_BTN_EXIT, hInst, NULL);
+   /*hwndGoto = CreateDialog(hInst,
+       MAKEINTRESOURCE(DLG_GOTO),
+       hWnd,
+       (DLGPROC)GoToProc);*/
+   HWND hwndGoto = CreateWindowW(szWindowClass,
+       szTitle,
+       WS_OVERLAPPEDWINDOW,
+       600,
+       50,
+       700,
+       600,
+       nullptr,
+       nullptr,
+       hInstance,
+       nullptr);
+   editText = CreateWindowW(L"edit", NULL, WS_VISIBLE | WS_CHILD, 30, 30, 100, 500, hwndGoto, (HMENU)ID_EDIT_LINE, hInst, NULL);
+   hListBox = CreateWindowW(L"listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD | LBS_WANTKEYBOARDINPUT, 30, 30, 500, 500, hWnd, (HMENU)ID_LIST, hInst, NULL);
+   hBtn1 = CreateWindowEx(NULL, L"button", L"Delete", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 30, 70, 30, hWnd, (HMENU)ID_BTN_DELETE, hInst, NULL);
+   hBtn2 = CreateWindowEx(NULL, L"button", L"Rename", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 90, 70, 30, hWnd, (HMENU)ID_BTN_RENAME, hInst, NULL);
+   hBtn3 = CreateWindowEx(NULL, L"button", L"Uninstall", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 150, 70, 30, hWnd, (HMENU)ID_BTN_UNINSTALL, hInst, NULL);
+   hBtn4 = CreateWindowEx(NULL, L"button", L"Exit", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 210, 70, 30, hWnd, (HMENU)ID_BTN_EXIT, hInst, NULL);
+    //hBtn4 = CreateWindowEx(NULL, L"button", L"Exit", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 210, 70, 30, hWnd, (HMENU)ID_BTN_EXIT, hInst, NULL);
 
    
 
@@ -226,11 +257,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //Uninstall application
             case ID_BTN_UNINSTALL:
                 i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                SendMessage(hListBox, LB_GETCURSEL, i, 0);
-                itemIndex = i;
-                check = std::to_wstring(itemIndex);
-                MessageBox(hWnd, regApp.at(itemIndex)._DisplayName.c_str(), L"wasd", MB_OK);
-                uninstall_string = regApp.at(itemIndex)._UninstallPath;
+                //SendMessage(hListBox, LB_GETCURSEL, i, 0);
+                
+                //check = std::to_wstring(i);
+                MessageBox(hWnd, regApp.at(i)._DisplayName.c_str(), L"wasd", MB_OK);
+                uninstall_string = regApp.at(i)._UninstallPath;
                 //MessageBox(hWnd, uninstall_string.c_str(), L"wasd", MB_OK);
                 _uninstall_app(uninstall_string);
                 break;
@@ -247,12 +278,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 _delete_app_from_registry(reg_key_name, dwByte);
                 break;
             case ID_BTN_RENAME:
-                i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                SendMessage(hListBox, LB_GETCURSEL, i, 0);
                 
-                //check = std::to_wstring(i);
-                MessageBox(hWnd, regApp.at(i)._DisplayName.c_str(), L"wasd", MB_OK);
-                uninstall_string = regApp.at(i)._UninstallPath;
+                    /*hwndGoto = CreateDialog(hInst,
+                        MAKEINTRESOURCE(118),
+                        hWnd,
+                        (DLGPROC)GoToProc);*/
+                    ShowWindow(hwndGoto, SW_SHOW);
+                
+                
+
                 break;
             case ID_BTN_EXIT:
                 DestroyWindow(hWnd);
@@ -310,6 +344,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+
 
 void TrayDrawIcon(HWND hWnd)
 {
@@ -484,21 +519,18 @@ void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord)
 }
 
 void _uninstall_app(std::wstring& uninstal_string)
-{/*
+{
     int a = 5;
     const wchar_t* input = uninstal_string.c_str();
     size_t size = (wcslen(input) + 1) * sizeof(wchar_t);
     char* buffer = new char[size];
     size_t convertedSize;
     wcstombs_s(&convertedSize, buffer, size, input, size);
-    system(buffer);*/
-    ShellExecute(NULL, L"open", L"msiexec", L" /I{FFB40224-64C0-4D82-ADC4-6B9434B90800}", NULL, SW_MINIMIZE);
-    ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
+    system(buffer);
+    //ShellExecute(NULL, L"open", L"msiexec", L" /I{FFB40224-64C0-4D82-ADC4-6B9434B90800}", NULL, SW_MINIMIZE);
+    //ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
 
 }
-
-
-
 
 
 bool compareByLength(const RegApplication& a, const RegApplication& b)
@@ -520,4 +552,40 @@ void _output_vector(HWND& hListBox)
     {
         SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)element._DisplayName.c_str());
     }
+}
+
+BOOL CALLBACK GoToProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    BOOL fError;
+
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        CheckDlgButton(hwndDlg, ID_ABSREL, fRelative);
+        return TRUE;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam))
+        {
+        case IDOK:
+            fRelative = IsDlgButtonChecked(hwndDlg, ID_ABSREL);
+            iLine = GetDlgItemInt(hwndDlg, ID_LINE, &fError, fRelative);
+            if (fError)
+            {
+                MessageBox(hwndDlg, NULL, NULL, MB_OK);
+                SendDlgItemMessage(hwndDlg, ID_LINE, EM_SETSEL, 0, -1L);
+            }
+            else
+
+                // Notify the owner window to carry out the task. 
+
+                return TRUE;
+
+        case IDCANCEL:
+            DestroyWindow(hwndDlg);
+            hwndGoto = NULL;
+            return TRUE;
+        }
+    }
+    return FALSE;
 }

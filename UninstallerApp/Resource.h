@@ -2,6 +2,7 @@
 // Включаемый файл, созданный в Microsoft Visual C++.
 // Используется UninstallerApp.rc
 
+#define DLG_GOTO				118
 #define IDS_APP_TITLE			103
 #define LBS_SORT FALSE
 #define IDR_MAINFRAME			128
@@ -22,6 +23,10 @@
 #define ID_BTN_EXIT             114
 #define IDC_STATISTICS			115
 #define TRAY_ICONUID			116
+#define ID_EDIT_LINE			117
+#define ID_ABSREL 119
+#define ID_LINE 120
+
 #endif
 // Следующие стандартные значения для новых объектов
 //
