@@ -271,7 +271,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 _delete_app_from_registry(reg_key_name, dwByte);
                 break;
             case ID_BTN_RENAME:
-                
                 DialogBox(hInst,                   // application instance
                     MAKEINTRESOURCE(IDD_DIALOG1), // dialog box resource
                     hWnd,                          // owner window
@@ -334,7 +333,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    TCHAR lpszPassword[16];
+    WCHAR res[2048];
+    int editlength;
     WORD cchPassword;
     std::wstring set_display_name;
     std::wstring reg_key_name;
@@ -345,21 +345,15 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     switch (message)
     {
     case WM_INITDIALOG:
-        // Set password character to a plus sign (+) 
-        /*i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+        i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+        //check = std::to_wstring(i);
         SendMessage(hListBox, LB_GETCURSEL, i, 0);
+        //check = std::to_wstring(i);
         editText = GetDlgItem(hDlg, IDC_EDIT1);
         SendMessage(editText, WM_SETTEXT, 0, (LPARAM)regApp.at(i)._DisplayName.c_str());
-        i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);*/
-        i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-        SendMessage(hListBox, LB_GETCURSEL, i, 0);
-        itemIndex = i;
-        check = std::to_wstring(itemIndex);
-        //MessageBox(hWnd, regApp.at(itemIndex)._RegKeyName.c_str(), L"wasd", MB_OK);
-        reg_key_name = regApp.at(itemIndex)._RegKeyName;
-        dwByte = regApp.at(itemIndex)._DwType;
-        editText = GetDlgItem(hDlg, IDC_EDIT1);
-        SendMessage(editText, WM_SETTEXT, 0, (LPARAM)regApp.at(itemIndex)._DisplayName.c_str());
+        reg_key_name = regApp.at(i)._RegKeyName;
+        //MessageBox(NULL, regApp.at(i)._DisplayName.c_str(), L"Messga", MB_OK | MB_OKCANCEL);
+        MessageBox(NULL, reg_key_name.c_str(), L"Messga", MB_OK | MB_OKCANCEL);
         break;
 
     case WM_COMMAND:
@@ -368,13 +362,18 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam)
         {
         case IDOK:
-            SendMessage(editText, WM_GETTEXT, i, (LPARAM)regApp.at(itemIndex)._DisplayName.c_str());
+            i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+            //SendMessage(editText, WM_GETTEXT, 0, (LPARAM)set_display_name);
+            //editlength = GetWindowTextLength(editText);
+            GetWindowText(editText, res, 2048);
             //+SendMessage(hListBox, LB_GETCURSEL, 0, 0);
             //SendMessage(editText, WM_GETTEXT, sizeof(regApp.at(i)._DisplayName), (LPARAM)regApp.at(i)._DisplayName.c_str());
-            set_display_name = regApp.at(i)._DisplayName;
+            //set_display_name = regApp.at(i)._DisplayName;
+            set_display_name = std::wstring(res);
             reg_key_name = regApp.at(i)._RegKeyName;
-            //_rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType);
-            MessageBox(NULL, regApp.at(i)._DisplayName.c_str(), L"Messga", MB_OK|MB_OKCANCEL);
+            _rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType);
+            //MessageBox(NULL, regApp.at(i)._DisplayName.c_str(), L"Messga", MB_OK | MB_OKCANCEL);
+            //MessageBox(NULL, reg_key_name.c_str(), L"Messga", MB_OK | MB_OKCANCEL);
             break;
         case IDCANCEL:
             EndDialog(hDlg, LOWORD(wParam));
@@ -573,7 +572,6 @@ void _uninstall_app(std::wstring& uninstal_string)
 
 }
 
-
 bool compareByLength(const RegApplication& a, const RegApplication& b)
 {
     return a._DisplayName < b._DisplayName;
@@ -601,7 +599,7 @@ void _rename_app_in_registry(std::wstring &set_value, std::wstring reg_key_name,
     //LPCTSTR value = TEXT("DisplayName");
     std::wstring value = L"DisplayName";
     std::wstring reg_path = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" + reg_key_name;
-
+    //MessageBox(NULL, reg_path.c_str(), L"Messga", MB_OK | MB_OKCANCEL);
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, reg_path.c_str(), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
     {
         ULONG bRes = RegSetValueExW(hKey, value.c_str(), 0, REG_SZ, (LPBYTE)(set_value.c_str()), (set_value.size()+1)*sizeof(wchar_t));
