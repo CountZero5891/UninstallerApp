@@ -250,12 +250,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //Uninstall application
             case ID_BTN_UNINSTALL:
                 i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                //SendMessage(hListBox, LB_GETCURSEL, i, 0);
+                SendMessage(hListBox, LB_GETCURSEL, i, 0);
                 
                 //check = std::to_wstring(i);
                 MessageBox(hWnd, regApp.at(i)._DisplayName.c_str(), L"wasd", MB_OK);
                 uninstall_string = regApp.at(i)._UninstallPath;
-                //MessageBox(hWnd, uninstall_string.c_str(), L"wasd", MB_OK);
+                MessageBox(hWnd, uninstall_string.c_str(), L"wasd", MB_OK);
                 _uninstall_app(uninstall_string);
                 break;
 
@@ -560,15 +560,14 @@ void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord)
 
 void _uninstall_app(std::wstring& uninstal_string)
 {
-    int a = 5;
     const wchar_t* input = uninstal_string.c_str();
     size_t size = (wcslen(input) + 1) * sizeof(wchar_t);
     char* buffer = new char[size];
     size_t convertedSize;
     wcstombs_s(&convertedSize, buffer, size, input, size);
-    system(buffer);
+    //system(buffer);
     //ShellExecute(NULL, L"open", L"msiexec", L" /I{FFB40224-64C0-4D82-ADC4-6B9434B90800}", NULL, SW_MINIMIZE);
-    //ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
+    ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
 
 }
 
