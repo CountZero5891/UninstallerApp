@@ -2,6 +2,9 @@
 // Включаемый файл, созданный в Microsoft Visual C++.
 // Используется UninstallerApp.rc
 //
+
+#define LBS_SORT FALSE
+
 #define IDC_MYICON                      2
 #define IDD_UNINSTALLERAPP_DIALOG       102
 #define IDS_APP_TITLE                   103
@@ -22,6 +25,8 @@
 #define IDD_DIALOG1                     129
 #define IDC_EDIT1                       1000
 #define IDC_STATIC                      -1
+//#define IDOK							130
+
 
 // Next default values for new objects
 // 
