@@ -4,7 +4,6 @@
 //
 
 #define LBS_SORT FALSE
-
 #define IDC_MYICON                      2
 #define IDD_UNINSTALLERAPP_DIALOG       102
 #define IDS_APP_TITLE                   103
@@ -25,7 +24,8 @@
 #define IDD_DIALOG1                     129
 #define IDC_EDIT1                       1000
 #define IDC_STATIC                      -1
-//#define IDOK							130
+#define WM_SYSCOMMAND                   0x0112
+#define WM_TRAYMESSAGE (WM_USER + 1)
 
 
 // Next default values for new objects

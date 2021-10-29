@@ -140,11 +140,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="regappfunc.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="UninstallerApp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="regappfunc.cpp" />
     <ClCompile Include="UninstallerApp.cpp" />
   </ItemGroup>
   <ItemGroup>
