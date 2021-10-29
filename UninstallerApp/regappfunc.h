@@ -14,16 +14,20 @@ struct RegApplication
     std::wstring _UninstallPath;
     std::wstring _DisplayName;
     std::wstring _RegKeyName;
+    HKEY _RegAppHKEY;
     DWORD _DwType;
-    RegApplication(WCHAR unPath[1023], WCHAR dispName[1023], WCHAR regKeyName[1023], DWORD dwType)
+    
+    RegApplication(WCHAR unPath[1023], WCHAR dispName[1023], WCHAR regKeyName[1023], HKEY hKeyReg, DWORD dwType)
     {
         _UninstallPath = unPath;
         _DisplayName = dispName;
         _RegKeyName = regKeyName;
+        _RegAppHKEY = hKeyReg;
         _DwType = dwType;
     };
 };
 
+void _call_user_apps(HWND& hList);//Read from user directory
 
 void _call_64_bit(HWND& hList);//Read for 64 bit
 
@@ -35,9 +39,9 @@ void _uninstall_application(std::wstring uninstall_string);//uninstall apllicati
 
 void _uninstall_app(std::wstring& uninstal_string);//deprecated
 
-void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord);//delete app from registry function
+void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord, HKEY StartKey);//delete app from registry function
 
-void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name, DWORD dwByte); //rename application in registry function
+void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name, DWORD dwByte, HKEY StartKey); //rename application in registry function
 
 
 #endif

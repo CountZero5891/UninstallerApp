@@ -90,7 +90,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    CloseHandle(Test_Present);
+    //CloseHandle(Test_Present);
     return (int) msg.wParam;
 }
 
@@ -160,7 +160,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
-   
+   _call_user_apps(hListBox);
    _call_64_bit(hListBox);
    _call_32_bit(hListBox);
    _output_vector(hListBox);
@@ -187,9 +187,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     std::wstring uninstall_string;
     std::wstring reg_key_name;
     std::wstring display_name;
-    DWORD dWord;
     DWORD dwByte;
-    
+    HKEY startHKey = NULL;
     switch (message)
     {
     case WM_COMMAND:
@@ -204,6 +203,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SendMessage(hListBox, LB_GETCURSEL, i, 0);
                 uninstall_string = regApp.at(i)._UninstallPath;
                 _uninstall_app(uninstall_string);
+                regApp.erase(next(regApp.begin()));
+                SendMessage(hListBox, LB_DELETESTRING, i, 0);
                 break;
             //Delete application from registry
             case ID_BTN_DELETE:
@@ -211,7 +212,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SendMessage(hListBox, LB_GETCURSEL, i, 0);
                 reg_key_name = regApp.at(i)._RegKeyName;
                 dwByte = regApp.at(i)._DwType;
-                _delete_app_from_registry(reg_key_name, dwByte);
+                startHKey = regApp.at(i)._RegAppHKEY;
+                _delete_app_from_registry(reg_key_name, dwByte, startHKey);
+                regApp.erase(next(regApp.begin()));
+                SendMessage(hListBox, LB_DELETESTRING, i, 0);
                 break;
             //rename application in registry
             case ID_BTN_RENAME:
@@ -305,6 +309,7 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     std::wstring set_display_name;
     std::wstring reg_key_name;
     std::wstring check;
+    HKEY startHKey = NULL;
     int i = 0;
     
     switch (message)
@@ -327,7 +332,10 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             GetWindowText(editText, res, 2048);
             set_display_name = std::wstring(res);
             reg_key_name = regApp.at(i)._RegKeyName;
-            _rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType);
+            startHKey = regApp.at(i)._RegAppHKEY;
+            _rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType, startHKey);
+            //SendMessage(hListBox, L, i, 0);
+            EndDialog(hDlg, LOWORD(wParam));
             break;
         case IDCANCEL:
             EndDialog(hDlg, LOWORD(wParam));
