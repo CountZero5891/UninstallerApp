@@ -264,7 +264,7 @@ void _uninstall_app(std::wstring& uninstal_string)
 
 }
 
-void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name, DWORD dwByte, HKEY StartKey)
+void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name, DWORD dwByte, HKEY StartKey, int i)
 {
     HKEY hKey = NULL;
     std::wstring value = L"DisplayName";
@@ -274,7 +274,9 @@ void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name,
         ULONG bRes = RegSetValueExW(hKey, value.c_str(), 0, REG_SZ, (LPBYTE)(set_value.c_str()), (set_value.size() + 1) * sizeof(wchar_t));
         if (bRes == ERROR_SUCCESS)
         {
+            regApp.at(i)._DisplayName = set_value;
             MessageBox(NULL, L"Success", L"Messga", MB_OK | MB_OKCANCEL);
+            
         }
         else {
             MessageBox(NULL, L"Fail", L"Messga", MB_OK | MB_OKCANCEL);

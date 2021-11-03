@@ -150,6 +150,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
        nullptr);
       
    hListBox = CreateWindowW(L"listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD | LBS_WANTKEYBOARDINPUT, 30, 30, 500, 500, hWnd, (HMENU)ID_LIST, hInst, NULL);
+   
    hBtn1 = CreateWindowEx(NULL, L"button", L"Delete", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 30, 70, 30, hWnd, (HMENU)ID_BTN_DELETE, hInst, NULL);
    hBtn2 = CreateWindowEx(NULL, L"button", L"Rename", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 90, 70, 30, hWnd, (HMENU)ID_BTN_RENAME, hInst, NULL);
    hBtn3 = CreateWindowEx(NULL, L"button", L"Uninstall", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 550, 150, 70, 30, hWnd, (HMENU)ID_BTN_UNINSTALL, hInst, NULL);
@@ -197,23 +198,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
+            
             // Разобрать выбор в меню:
             switch (wmId)
             {
             //Uninstall application
             case ID_BTN_UNINSTALL:
-                msgBx = MessageBox(hWnd, L"Вы хотите удалить это приложение", L"Предупреждение", MB_ICONEXCLAMATION | MB_YESNO);
-                if (msgBx == IDYES)
-                {
-                    i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                    SendMessage(hListBox, LB_GETCURSEL, i, 0);
-                    uninstall_string = regApp.at(i)._UninstallPath;
-                    _uninstall_application(uninstall_string);
-                }
-                //uninstall_string = L"C:\\Program Files (x86)\\AIMP\\uninstall.exe"
-                //
-                /*regApp.erase(next(regApp.begin()));
-                SendMessage(hListBox, LB_DELETESTRING, i, 0);*/
+
+                    msgBx = MessageBox(hWnd, L"Вы хотите удалить это приложение", L"Предупреждение", MB_ICONEXCLAMATION | MB_YESNO);
+                    if (msgBx == IDYES)
+                    {
+                        i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+                        SendMessage(hListBox, LB_GETCURSEL, i, 0);
+                        uninstall_string = regApp.at(i)._UninstallPath;
+                        _uninstall_application(uninstall_string);
+                    }
+
                 break;
             //Delete application from registry
             case ID_BTN_DELETE:
@@ -221,6 +221,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (isAdmin == TRUE)
                 {
                     i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+                    
                     SendMessage(hListBox, LB_GETCURSEL, i, 0);
                     reg_key_name = regApp.at(i)._RegKeyName;
                     dwByte = regApp.at(i)._DwType;
@@ -246,7 +247,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     );
                 }
                 else {
-                    MessageBox(hWnd, L"Данная операция разрешена только админичтратору", L"Ошибка", MB_OK);
+                    MessageBox(hWnd, L"Данная операция разрешена только админиcтратору", L"Ошибка", MB_OK);
                 }
                 break;
             case ID_BTN_EXIT:
@@ -269,6 +270,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+            SendMessage(hListBox, LB_SETCURSEL, 0, 0);
             
             EndPaint(hWnd, &ps);
         }
@@ -333,7 +335,6 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     std::wstring reg_key_name;
     HKEY startHKey = NULL;
     int i = 0;
-    //LRESULT in
     switch (message)
     {
     case WM_INITDIALOG:
@@ -342,7 +343,6 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         editText = GetDlgItem(hDlg, IDC_EDIT1);
         SendMessage(editText, WM_SETTEXT, 0, (LPARAM)regApp.at(i)._DisplayName.c_str());
         reg_key_name = regApp.at(i)._RegKeyName;
-        MessageBox(NULL, reg_key_name.c_str(), L"Messga", MB_OK | MB_OKCANCEL);
         break;
 
     case WM_COMMAND:
@@ -355,8 +355,9 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             set_display_name = std::wstring(res);
             reg_key_name = regApp.at(i)._RegKeyName;
             startHKey = regApp.at(i)._RegAppHKEY;
-            _rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType, startHKey);
-            SendMessage(hListBox, WM_SETTEXT, i, 0);
+            _rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType, startHKey, i);
+            SendMessage(hListBox, LB_DELETESTRING, i, 0);
+            SendMessage(hListBox, LB_INSERTSTRING, i, (LPARAM)res);
             EndDialog(hDlg, LOWORD(wParam));
             break;
         case IDCANCEL:

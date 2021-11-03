@@ -40,7 +40,7 @@ void _uninstall_app(std::wstring& uninstal_string);//deprecated
 
 void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord, HKEY StartKey);//delete app from registry function
 
-void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name, DWORD dwByte, HKEY StartKey); //rename application in registry function
+void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name, DWORD dwByte, HKEY StartKey, int i); //rename application in registry function
 
 
 #endif
