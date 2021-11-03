@@ -3,7 +3,6 @@
 
 #include "framework.h"
 #include <string>
-#include <string>
 #include <strsafe.h>
 #include <vector>
 #include <algorithm>

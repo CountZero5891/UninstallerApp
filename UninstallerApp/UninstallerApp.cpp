@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "UninstallerApp.h"
 #include "regappfunc.h"
+#include <ShlObj.h>
 
 #define MAX_LOADSTRING 100
 #define BUFFER 8192
@@ -16,7 +17,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса глав�
 HWND hListBox, hBtn1, hBtn2, hBtn3, hBtn4;
 HWND hwndGoto = NULL;
 HWND editText = NULL;
-
+BOOL isAdmin;
 
 //Глобальная переменная, вектор структур 
 std::vector<RegApplication> regApp;
@@ -115,7 +116,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_UNINSTALLERAPP));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_UNINSTALLERAPP);
+    wcex.lpszMenuName   = NULL;
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -138,7 +139,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    HWND hWnd = CreateWindowW(szWindowClass, 
        szTitle, 
-       WS_OVERLAPPEDWINDOW,
+       WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZE,
        600, 
        50, 
        700, 
@@ -160,6 +161,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+   isAdmin = IsUserAnAdmin();
    _call_user_apps(hListBox);
    _call_64_bit(hListBox);
    _call_32_bit(hListBox);
@@ -183,6 +185,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     int i = 0;
+    int msgBx = 0;
     std::wstring check;
     std::wstring uninstall_string;
     std::wstring reg_key_name;
@@ -199,32 +202,52 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             //Uninstall application
             case ID_BTN_UNINSTALL:
-                i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                SendMessage(hListBox, LB_GETCURSEL, i, 0);
-                uninstall_string = regApp.at(i)._UninstallPath;
-                _uninstall_app(uninstall_string);
-                regApp.erase(next(regApp.begin()));
-                SendMessage(hListBox, LB_DELETESTRING, i, 0);
+                msgBx = MessageBox(hWnd, L"Вы хотите удалить это приложение", L"Предупреждение", MB_ICONEXCLAMATION | MB_YESNO);
+                if (msgBx == IDYES)
+                {
+                    i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+                    SendMessage(hListBox, LB_GETCURSEL, i, 0);
+                    uninstall_string = regApp.at(i)._UninstallPath;
+                    _uninstall_application(uninstall_string);
+                }
+                //uninstall_string = L"C:\\Program Files (x86)\\AIMP\\uninstall.exe"
+                //
+                /*regApp.erase(next(regApp.begin()));
+                SendMessage(hListBox, LB_DELETESTRING, i, 0);*/
                 break;
             //Delete application from registry
             case ID_BTN_DELETE:
-                i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-                SendMessage(hListBox, LB_GETCURSEL, i, 0);
-                reg_key_name = regApp.at(i)._RegKeyName;
-                dwByte = regApp.at(i)._DwType;
-                startHKey = regApp.at(i)._RegAppHKEY;
-                _delete_app_from_registry(reg_key_name, dwByte, startHKey);
-                regApp.erase(next(regApp.begin()));
-                SendMessage(hListBox, LB_DELETESTRING, i, 0);
+
+                if (isAdmin == TRUE)
+                {
+                    i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+                    SendMessage(hListBox, LB_GETCURSEL, i, 0);
+                    reg_key_name = regApp.at(i)._RegKeyName;
+                    dwByte = regApp.at(i)._DwType;
+                    startHKey = regApp.at(i)._RegAppHKEY;
+                    _delete_app_from_registry(reg_key_name, dwByte, startHKey);
+                    regApp.erase(next(regApp.begin()));
+                    SendMessage(hListBox, LB_DELETESTRING, i, 0);
+                }
+                else {
+                    MessageBox(hWnd, L"Данная операция разрешена только администратору", L"Ошибка", MB_OK);
+                }
+
+                
                 break;
             //rename application in registry
             case ID_BTN_RENAME:
-                DialogBox(hInst,                   // application instance
-                    MAKEINTRESOURCE(IDD_DIALOG1), // dialog box resource
-                    hWnd,                          // owner window
-                    EditAppNameForm                    // dialog box window procedure
-                );
-                
+                if (isAdmin == TRUE)
+                {
+                    DialogBox(hInst,                   // application instance
+                        MAKEINTRESOURCE(IDD_DIALOG1), // dialog box resource
+                        hWnd,                          // owner window
+                        EditAppNameForm                    // dialog box window procedure
+                    );
+                }
+                else {
+                    MessageBox(hWnd, L"Данная операция разрешена только админичтратору", L"Ошибка", MB_OK);
+                }
                 break;
             case ID_BTN_EXIT:
                 DestroyWindow(hWnd);
@@ -308,10 +331,9 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     WCHAR res[2048];
     std::wstring set_display_name;
     std::wstring reg_key_name;
-    std::wstring check;
     HKEY startHKey = NULL;
     int i = 0;
-    
+    //LRESULT in
     switch (message)
     {
     case WM_INITDIALOG:
@@ -334,7 +356,7 @@ INT_PTR CALLBACK EditAppNameForm(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             reg_key_name = regApp.at(i)._RegKeyName;
             startHKey = regApp.at(i)._RegAppHKEY;
             _rename_app_in_registry(set_display_name, reg_key_name, regApp.at(i)._DwType, startHKey);
-            //SendMessage(hListBox, L, i, 0);
+            SendMessage(hListBox, WM_SETTEXT, i, 0);
             EndDialog(hDlg, LOWORD(wParam));
             break;
         case IDCANCEL:
@@ -373,3 +395,9 @@ void TrayDeleteIcon(HWND hWnd)
 }
 
 
+/*
+* Ты добавил проверку роли пользователя
+* Исправил функцию переименования
+* Осталось исправить удаление и поиск программ
+* Сделай
+*/

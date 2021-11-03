@@ -2,7 +2,6 @@
 
 extern std::vector<RegApplication> regApp;
 
-
 struct RegAppCmp {
     bool operator () (const RegApplication& regApps1, const RegApplication& regApps2)const {
         return regApps1._DisplayName < regApps2._DisplayName;
@@ -208,12 +207,33 @@ void _delete_app_from_registry(std::wstring& reg_key_name, DWORD& dWord, HKEY St
 
 void _uninstall_application(std::wstring uninstall_string)
 {
-    std::replace(uninstall_string.begin(), uninstall_string.end(), ' ', '\0');
-    std::wstring str1 = uninstall_string;
-    std::wstring str2 = uninstall_string;
-    ShellExecute(NULL, L"open", uninstall_string.c_str(), NULL, NULL, SW_MINIMIZE);
-    //CreateProcess();
-    //ShellExecute(NULL, L"open", L"msiexec.exe", L"/I{A8F42E56-8D1F-4080-BD79-8375D3AD18BE}", /*L"/I{A8F42E56-8D1F-4080-BD79-8375D3AD18BE}"*/ NULL, SW_MINIMIZE);
+
+    //at least this must work
+    size_t count = uninstall_string.size();
+    size_t pos = 0;
+    pos = uninstall_string.find(L".exe");
+    std::wstring execFile = uninstall_string.substr(0, pos + 5);
+    std::wstring parameter = L"";
+    if (count < pos + 5)
+    {
+        parameter = L"";
+    }
+    else {
+        parameter = uninstall_string.substr(pos + 5);
+    }
+    
+    SHELLEXECUTEINFO si = { 0 };
+    si.cbSize = sizeof(SHELLEXECUTEINFO);
+    si.fMask = SEE_MASK_NOCLOSEPROCESS;
+    si.hwnd = NULL;
+    si.lpFile = execFile.c_str();
+    si.lpParameters = parameter.c_str();
+    si.lpDirectory = NULL;
+    si.nShow = SW_SHOW;
+    si.hInstApp = NULL;
+    ShellExecuteEx(&si);
+    WaitForSingleObject(si.hProcess, INFINITE);
+    CloseHandle(si.hProcess);
 
 }
 
@@ -226,11 +246,21 @@ void _uninstall_app(std::wstring& uninstal_string)
     size_t convertedSize;
     wcstombs_s(&convertedSize, buffer, size, input, size);
     system(buffer);
-    //ShellExecute(NULL, L"open", L"msiexec" L"/I{FFB40224-64C0-4D82-ADC4-6B9434B90800}", NULL, SW_MINIMIZE);
-    //ShellExecute(NULL, L"open", L"msiexec.exe", L"/I{A8F42E56-8D1F-4080-BD79-8375D3AD18BE}", /*L"/I{A8F42E56-8D1F-4080-BD79-8375D3AD18BE}"*/ NULL, SW_MINIMIZE);
-    //ShellExecute(NULL, L"open", L"msiexec", L"/I{A8F42E56-8D1F-4080-BD79-8375D3AD18BE}", NULL, SW_MINIMIZE);
-
-    //ShellExecute(NULL, L"open", uninstal_string.c_str(), NULL, NULL, SW_SHOW);
+    //or maybe this, but it cant launch some executable files
+    // 
+    /*LPWSTR ws = new wchar_t[uninstal_string.size() + 1];
+    std::copy(uninstal_string.begin(), uninstal_string.end(), ws);
+    ws[uninstal_string.size()] = 0;
+    wchar_t cmd[] = L"cmd.exe";
+    STARTUPINFO si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    DWORD dwProcessId = 0;
+    DWORD dwThreadId = 0;
+    ZeroMemory(&si, sizeof(si));
+    ZeroMemory(&pi, sizeof(pi));
+    BOOL bCreateProcess = NULL;
+    CreateProcess(NULL, ws, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);*/
+   //////////////////////////////////////////////////////////////////
 
 }
 
@@ -241,7 +271,7 @@ void _rename_app_in_registry(std::wstring& set_value, std::wstring reg_key_name,
     std::wstring reg_path = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" + reg_key_name;
     if (RegOpenKeyExW(StartKey, reg_path.c_str(), 0, /*KEY_ALL_ACCESS*/dwByte, &hKey) == ERROR_SUCCESS)
     {
-        ULONG bRes = RegSetValueExW(StartKey, value.c_str(), 0, REG_SZ, (LPBYTE)(set_value.c_str()), (set_value.size() + 1) * sizeof(wchar_t));
+        ULONG bRes = RegSetValueExW(hKey, value.c_str(), 0, REG_SZ, (LPBYTE)(set_value.c_str()), (set_value.size() + 1) * sizeof(wchar_t));
         if (bRes == ERROR_SUCCESS)
         {
             MessageBox(NULL, L"Success", L"Messga", MB_OK | MB_OKCANCEL);
